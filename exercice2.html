@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 2 : Interaction & Grabbing VR - TP 03 WebVR</title>
+  <!-- A-Frame 1.5.0 -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- Contrôles Joysticks VR -->
+  <script src="js/vr-controls.js"></script>
+  <!-- Système de Saisie (Grabbing) et Physique -->
+  <script src="js/grabbable.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      padding: 12px 18px;
+      border-radius: 8px;
+      z-index: 1000;
+      max-width: 400px;
+      backdrop-filter: blur(4px);
+    }
+    .hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+    }
+    .hud p {
+      margin: 4px 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: #cbd5e1;
+    }
+    .nav-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: #0284c7;
+      color: white;
+      text-decoration: none;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .nav-btn:hover {
+      background: #0369a1;
+    }
+    .reset-btn {
+      display: inline-block;
+      margin-top: 8px;
+      margin-left: 6px;
+      padding: 6px 12px;
+      background: #475569;
+      color: white;
+      border: none;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .reset-btn:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay d'instructions et contrôles -->
+  <div class="hud">
+    <h1>Exercice 2 : Interaction & Grabbing</h1>
+    <p><strong>En VR :</strong> Approchez le contrôleur d'un objet et maintenez la gâchette / grip pour le saisir. Relâchez pour le lancer ou le faire tomber avec la gravité.</p>
+    <p><strong>Sur Desktop :</strong> Cliquez sur un objet pour le saisir. Appuyez sur [E] pour le lancer, ou relâchez le clic.</p>
+    <p><strong>Physique :</strong> Les objets suivent la main, réagissent à la gravité (-9.8 m/s²) et rebondissent au sol.</p>
+    <a href="index.html" class="nav-btn">← Sommaire</a>
+    <button class="reset-btn" onclick="location.reload()">Réinitialiser les objets</button>
+  </div>
+
+  <a-scene
+    shadow="type: pcfsoft"
+    background="color: #0b0f19"
+    desktop-grab-controls="camera: #camera">
+
+    <!-- Sol avec réception d'ombres -->
+    <a-plane
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="30"
+      height="30"
+      color="#1e293b"
+      material="roughness: 0.8; metalness: 0.2"
+      shadow="receive: true">
+    </a-plane>
+
+    <!-- Table de présentation des objets -->
+    <a-entity id="table" position="0 0 -1.5">
+      <!-- Plateau -->
+      <a-box
+        position="0 0.85 0"
+        width="2.2"
+        height="0.08"
+        depth="1.2"
+        color="#334155"
+        material="roughness: 0.5; metalness: 0.3"
+        shadow="cast: true; receive: true">
+      </a-box>
+      <!-- Pieds de la table -->
+      <a-cylinder position="-0.95 0.42 -0.45" radius="0.04" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="0.95 0.42 -0.45" radius="0.04" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="-0.95 0.42 0.45" radius="0.04" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="0.95 0.42 0.45" radius="0.04" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+    </a-entity>
+
+    <!-- ========================================== -->
+    <!-- OBJETS SAISISSABLES (GRABBABLE + GRAVITÉ)  -->
+    <!-- ========================================== -->
+
+    <!-- 1. Cube Rouge Saisissable -->
+    <a-box
+      id="grab-cube-1"
+      class="grabbable"
+      vr-grabbable="useGravity: true; bounce: 0.45; floorY: 0.15"
+      position="-0.6 1.05 -1.5"
+      width="0.3"
+      height="0.3"
+      depth="0.3"
+      color="#ef4444"
+      material="roughness: 0.3; metalness: 0.4"
+      shadow="cast: true; receive: true">
+    </a-box>
+
+    <!-- 2. Sphère Bleue Saisissable -->
+    <a-sphere
+      id="grab-sphere-1"
+      class="grabbable"
+      vr-grabbable="useGravity: true; bounce: 0.65; floorY: 0.18"
+      position="-0.15 1.08 -1.5"
+      radius="0.18"
+      color="#0ea5e9"
+      material="roughness: 0.2; metalness: 0.5"
+      shadow="cast: true; receive: true">
+    </a-sphere>
+
+    <!-- 3. Cylindre Vert Saisissable -->
+    <a-cylinder
+      id="grab-cylinder-1"
+      class="grabbable"
+      vr-grabbable="useGravity: true; bounce: 0.35; floorY: 0.2"
+      position="0.25 1.1 -1.5"
+      radius="0.14"
+      height="0.38"
+      color="#10b981"
+      material="roughness: 0.3; metalness: 0.3"
+      shadow="cast: true; receive: true">
+    </a-cylinder>
+
+    <!-- 4. Cube Jaune Or Saisissable -->
+    <a-box
+      id="grab-cube-2"
+      class="grabbable"
+      vr-grabbable="useGravity: true; bounce: 0.5; floorY: 0.12"
+      position="0.65 1.02 -1.5"
+      width="0.24"
+      height="0.24"
+      depth="0.24"
+      color="#f59e0b"
+      material="roughness: 0.2; metalness: 0.6"
+      shadow="cast: true; receive: true">
+    </a-box>
+
+    <!-- Lumières et Ombres -->
+    <a-entity
+      light="type: directional;
+             color: #ffffff;
+             intensity: 1.3;
+             castShadow: true;
+             shadowMapHeight: 2048;
+             shadowMapWidth: 2048;
+             shadowCameraNear: 0.5;
+             shadowCameraFar: 20;
+             shadowCameraLeft: -6;
+             shadowCameraRight: 6;
+             shadowCameraTop: 6;
+             shadowCameraBottom: -6;
+             shadowBias: -0.0005;"
+      position="4 8 3">
+    </a-entity>
+
+    <a-entity light="type: ambient; color: #64748b; intensity: 0.45;"></a-entity>
+
+    <a-sky color="#0f172a"></a-sky>
+
+    <!-- RIG VR & CONTRÔLEURS -->
+    <a-entity id="rig" position="0 0 0.5">
+      <!-- Caméra joueur -->
+      <a-camera
+        id="camera"
+        position="0 1.6 0"
+        look-controls="pointerLockEnabled: false"
+        wasd-controls="acceleration: 20">
+      </a-camera>
+
+      <!-- Contrôleur Main Gauche avec Grabbing -->
+      <a-entity
+        id="left-controller"
+        oculus-touch-controls="hand: left"
+        thumbstick-movement="rig: #rig; camera: #camera; speed: 2.5"
+        vr-grab-controls="hand: left; grabRadius: 0.4">
+        <!-- Sphère visuelle représentant la main -->
+        <a-sphere radius="0.04" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+
+      <!-- Contrôleur Main Droite avec Grabbing -->
+      <a-entity
+        id="right-controller"
+        oculus-touch-controls="hand: right"
+        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap"
+        vr-grab-controls="hand: right; grabRadius: 0.4">
+        <!-- Sphère visuelle représentant la main -->
+        <a-sphere radius="0.04" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+</body>
+</html>

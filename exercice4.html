@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 4 : Cibles et effets de particules - TP 03 WebVR</title>
+  <!-- A-Frame 1.5.0 -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- Contrôles Joysticks VR -->
+  <script src="js/vr-controls.js"></script>
+  <!-- Système de Saisie (Grabbing) -->
+  <script src="js/grabbable.js"></script>
+  <!-- Audio Spatialisé, Particules, Cibles & Score -->
+  <script src="js/targets-audio.js"></script>
+  <!-- Modèle d'Arme et Balistique Physique -->
+  <script src="js/weapon.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      padding: 12px 18px;
+      border-radius: 8px;
+      z-index: 1000;
+      max-width: 420px;
+      backdrop-filter: blur(4px);
+    }
+    .hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+    }
+    .hud p {
+      margin: 4px 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: #cbd5e1;
+    }
+    .score-badge {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4ade80;
+      margin: 6px 0;
+    }
+    .controls-panel {
+      margin-top: 8px;
+      padding: 8px;
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0;
+    }
+    .control-row label {
+      color: #94a3b8;
+    }
+    .control-row input[type="range"] {
+      width: 120px;
+    }
+    .control-val {
+      font-family: monospace;
+      color: #38bdf8;
+      width: 45px;
+      text-align: right;
+    }
+    .nav-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #0284c7;
+      color: white;
+      text-decoration: none;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .nav-btn:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay d'affichage du score, réglage audio et navigation -->
+  <div class="hud">
+    <h1>Exercice 4 : Cibles & Particules</h1>
+    <div class="score-badge" id="hud-score">Score: 0 | Cibles: 0</div>
+    <p><strong>VR :</strong> Prenez l'arme et tirez sur les cibles volantes (cubes, cônes, cylindres).</p>
+    <p><strong>Desktop :</strong> Cliquez ou appuyez sur [Espace] pour tirer.</p>
+    <p><strong>Effets :</strong> Particules d'éclats à l'impact et son spatialisé avec atténuation de distance.</p>
+
+    <!-- Réglage du volume et de l'atténuation audio demandé dans le TP -->
+    <div class="controls-panel">
+      <div class="control-row">
+        <label for="volume-range">Volume Master :</label>
+        <input type="range" id="volume-range" min="0" max="1" step="0.05" value="0.8" oninput="updateAudioParams()">
+        <span class="control-val" id="vol-val">80%</span>
+      </div>
+      <div class="control-row">
+        <label for="spawn-rate">Cadence cibles :</label>
+        <input type="range" id="spawn-rate" min="1000" max="5000" step="500" value="2500" oninput="updateSpawner()">
+        <span class="control-val" id="spawn-val">2.5s</span>
+      </div>
+    </div>
+
+    <a href="index.html" class="nav-btn">← Sommaire</a>
+  </div>
+
+  <script>
+    function updateAudioParams() {
+      const vol = parseFloat(document.getElementById('volume-range').value);
+      document.getElementById('vol-val').innerText = Math.round(vol * 100) + '%';
+      if (window.AudioFX) {
+        window.AudioFX.masterVolume = vol;
+      }
+    }
+
+    function updateSpawner() {
+      const ms = parseInt(document.getElementById('spawn-rate').value);
+      document.getElementById('spawn-val').innerText = (ms / 1000).toFixed(1) + 's';
+      const spawnerEl = document.querySelector('#target-manager');
+      if (spawnerEl) {
+        spawnerEl.setAttribute('target-spawner', 'interval', ms);
+      }
+    }
+  </script>
+
+  <a-scene
+    shadow="type: pcfsoft"
+    background="color: #070a12"
+    desktop-grab-controls="camera: #camera">
+
+    <!-- Sol du stand de tir spatial -->
+    <a-plane
+      position="0 0 -10"
+      rotation="-90 0 0"
+      width="24"
+      height="35"
+      color="#111827"
+      material="roughness: 0.7; metalness: 0.3"
+      shadow="receive: true">
+    </a-plane>
+
+    <!-- Quadrillage néon au sol -->
+    <a-grid-helper size="35" divisions="35" position="0 0.01 -10"></a-grid-helper>
+
+    <!-- Mur de fond avec affichage 3D du score -->
+    <a-box
+      position="0 4.5 -22"
+      width="22"
+      height="9"
+      depth="0.6"
+      color="#0f172a"
+      material="roughness: 0.8; metalness: 0.3"
+      shadow="receive: true">
+    </a-box>
+
+    <!-- Tableau 3D des scores en lettres lumineuses dans la scène -->
+    <a-entity
+      id="score-board"
+      position="0 7.2 -21.6"
+      geometry="primitive: plane; width: 8.5; height: 1.4"
+      material="color: #030712; opacity: 0.85; transparent: true">
+      <a-text
+        id="score-3d-text"
+        value="SCORE: 0  |  TOUCHES: 0"
+        align="center"
+        color="#38bdf8"
+        scale="2.2 2.2 2.2"
+        position="0 0 0.05">
+      </a-text>
+    </a-entity>
+
+    <!-- Table de stand de tir avec arme -->
+    <a-entity id="shooting-bench" position="0 0 -1.2">
+      <a-box position="0 0.85 0" width="1.6" height="0.08" depth="0.8" color="#334155" shadow="cast: true; receive: true"></a-box>
+      <a-cylinder position="-0.7 0.42 -0.3" radius="0.03" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="0.7 0.42 -0.3" radius="0.03" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="-0.7 0.42 0.3" radius="0.03" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+      <a-cylinder position="0.7 0.42 0.3" radius="0.03" height="0.84" color="#0f172a" shadow="cast: true"></a-cylinder>
+    </a-entity>
+
+    <!-- ARME 3D (Saisissable, avec tir, flash et son) -->
+    <a-entity
+      id="player-gun"
+      class="grabbable"
+      vr-grabbable="useGravity: true; floorY: 0.9"
+      gun-model
+      vr-gun="bulletSpeed: 45; bulletGravity: -3.5; cooldown: 160"
+      position="0 0.95 -1.2"
+      rotation="0 0 0"
+      shadow="cast: true">
+    </a-entity>
+
+    <!-- ========================================== -->
+    <!-- GÉNÉRATEUR ALÉATOIRE DE CIBLES 3D          -->
+    <!-- ========================================== -->
+    <a-entity
+      id="target-manager"
+      target-spawner="interval: 2500; maxTargets: 7; minX: -6; maxX: 6; minY: 1.3; maxY: 4.2; minZ: -18; maxZ: -7">
+    </a-entity>
+
+    <!-- CIBLES INITIALES PRÉSENTES AU DÉMARRAGE -->
+    <!-- 1. Cible Cube Rouge -->
+    <a-box
+      class="target"
+      target="points: 100; shapeType: cube"
+      position="-2.5 2.2 -9"
+      width="0.7"
+      height="0.7"
+      depth="0.7"
+      color="#ef4444"
+      material="roughness: 0.3; metalness: 0.4; emissive: #ef4444; emissiveIntensity: 0.2"
+      shadow="cast: true; receive: true">
+    </a-box>
+
+    <!-- 2. Cible Cône Jaune -->
+    <a-cone
+      class="target"
+      target="points: 150; shapeType: cone"
+      position="0 2.8 -12"
+      radius-bottom="0.45"
+      height="0.9"
+      color="#f59e0b"
+      material="roughness: 0.3; metalness: 0.4; emissive: #f59e0b; emissiveIntensity: 0.2"
+      shadow="cast: true; receive: true">
+    </a-cone>
+
+    <!-- 3. Cible Cylindre Cyan -->
+    <a-cylinder
+      class="target"
+      target="points: 120; shapeType: cylinder"
+      position="2.5 2.0 -10"
+      radius="0.45"
+      height="0.6"
+      color="#06b6d4"
+      material="roughness: 0.3; metalness: 0.4; emissive: #06b6d4; emissiveIntensity: 0.2"
+      shadow="cast: true; receive: true">
+    </a-cylinder>
+
+    <!-- Lumières et Ombres -->
+    <a-entity
+      light="type: directional;
+             color: #ffffff;
+             intensity: 1.3;
+             castShadow: true;
+             shadowMapHeight: 2048;
+             shadowMapWidth: 2048;
+             shadowCameraNear: 0.5;
+             shadowCameraFar: 35;
+             shadowCameraLeft: -12;
+             shadowCameraRight: 12;
+             shadowCameraTop: 12;
+             shadowCameraBottom: -12;"
+      position="6 10 3">
+    </a-entity>
+
+    <a-entity light="type: ambient; color: #64748b; intensity: 0.45;"></a-entity>
+
+    <!-- Projecteur néon bleuté au-dessus du stand -->
+    <a-entity light="type: point; color: #38bdf8; intensity: 0.8; distance: 15;" position="0 5 -5"></a-entity>
+
+    <a-sky color="#070a12"></a-sky>
+
+    <!-- RIG DU JOUEUR -->
+    <a-entity id="rig" position="0 0 0.5">
+      <a-camera
+        id="camera"
+        position="0 1.6 0"
+        look-controls="pointerLockEnabled: false"
+        wasd-controls="acceleration: 20">
+      </a-camera>
+
+      <!-- Contrôleurs VR -->
+      <a-entity
+        id="left-controller"
+        oculus-touch-controls="hand: left"
+        thumbstick-movement="rig: #rig; camera: #camera; speed: 2.5"
+        vr-grab-controls="hand: left; grabRadius: 0.4">
+        <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+
+      <a-entity
+        id="right-controller"
+        oculus-touch-controls="hand: right"
+        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap"
+        vr-grab-controls="hand: right; grabRadius: 0.4">
+        <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+</body>
+</html>

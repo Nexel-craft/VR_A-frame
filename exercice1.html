@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 1 : SceneVR - TP 03 WebVR</title>
+  <!-- A-Frame 1.5.0 -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- Contrôles Joysticks VR -->
+  <script src="js/vr-controls.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      padding: 12px 18px;
+      border-radius: 8px;
+      z-index: 1000;
+      max-width: 380px;
+      backdrop-filter: blur(4px);
+    }
+    .hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+    }
+    .hud p {
+      margin: 4px 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: #cbd5e1;
+    }
+    .nav-btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 12px;
+      background: #0284c7;
+      color: white;
+      text-decoration: none;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .nav-btn:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay d'informations et navigation -->
+  <div class="hud">
+    <h1>Exercice 1 : SceneVR</h1>
+    <p><strong>VR :</strong> Joystick gauche = déplacement | Joystick droit = rotation</p>
+    <p><strong>Desktop :</strong> Touches ZQSD / Flèches = déplacement | Clic-glisser = regarder</p>
+    <p><strong>Éléments :</strong> Cube, sphère, cylindre, sol texturé, ombres réalistes et lumière ambiante.</p>
+    <a href="index.html" class="nav-btn">← Retour au sommaire</a>
+  </div>
+
+  <a-scene
+    shadow="type: pcfsoft"
+    background="color: #0f172a"
+    renderer="antialias: true; colorManagement: true;">
+
+    <!-- Sol recevant les ombres -->
+    <a-plane
+      position="0 0 0"
+      rotation="-90 0 0"
+      width="30"
+      height="30"
+      color="#334155"
+      material="roughness: 0.85; metalness: 0.1"
+      shadow="receive: true">
+    </a-plane>
+
+    <!-- Quadrillage décoratif au sol -->
+    <a-grid-helper size="30" divisions="30" position="0 0.01 0"></a-grid-helper>
+
+    <!-- 1. CUBE 3D (projette et reçoit des ombres) -->
+    <a-box
+      position="-1.5 0.75 -3"
+      width="1.5"
+      height="1.5"
+      depth="1.5"
+      color="#ef4444"
+      material="roughness: 0.3; metalness: 0.2"
+      shadow="cast: true; receive: true">
+    </a-box>
+
+    <!-- 2. SPHÈRE 3D (projette et reçoit des ombres) -->
+    <a-sphere
+      position="1.5 0.8 -3.5"
+      radius="0.8"
+      color="#38bdf8"
+      material="roughness: 0.2; metalness: 0.5"
+      shadow="cast: true; receive: true">
+    </a-sphere>
+
+    <!-- 3. CYLINDRE 3D (projette et reçoit des ombres) -->
+    <a-cylinder
+      position="0 1.25 -5"
+      radius="0.75"
+      height="2.5"
+      color="#10b981"
+      material="roughness: 0.4; metalness: 0.2"
+      shadow="cast: true; receive: true">
+    </a-cylinder>
+
+    <!-- Lumière Directionnelle (génère des ombres réalistes) -->
+    <a-entity
+      light="type: directional;
+             color: #fffbeb;
+             intensity: 1.2;
+             castShadow: true;
+             shadowMapHeight: 2048;
+             shadowMapWidth: 2048;
+             shadowCameraNear: 0.5;
+             shadowCameraFar: 25;
+             shadowCameraLeft: -10;
+             shadowCameraRight: 10;
+             shadowCameraTop: 10;
+             shadowCameraBottom: -10;
+             shadowBias: -0.0005;"
+      position="6 10 4">
+    </a-entity>
+
+    <!-- Lumière Ambient (éclairage uniforme pour une atmosphère naturelle) -->
+    <a-entity
+      light="type: ambient;
+             color: #94a3b8;
+             intensity: 0.45;">
+    </a-entity>
+
+    <!-- Ciel VR avec gradient doux -->
+    <a-sky color="#1e293b"></a-sky>
+
+    <!-- RIG DU JOUEUR (Caméra + Contrôleurs VR avec Joysticks) -->
+    <a-entity id="rig" position="0 0 1">
+      <!-- Caméra joueur (hauteur des yeux 1.6m) -->
+      <a-camera
+        id="camera"
+        position="0 1.6 0"
+        look-controls="pointerLockEnabled: false"
+        wasd-controls="acceleration: 25">
+      </a-camera>
+
+      <!-- Contrôleur Main Gauche : Déplacement au joystick (avant/arrière/gauche/droite) -->
+      <a-entity
+        id="left-controller"
+        oculus-touch-controls="hand: left"
+        thumbstick-movement="rig: #rig; camera: #camera; speed: 3.0">
+      </a-entity>
+
+      <!-- Contrôleur Main Droite : Rotation de la vue au joystick (snap turn 45°) -->
+      <a-entity
+        id="right-controller"
+        oculus-touch-controls="hand: right"
+        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap">
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+</body>
+</html>

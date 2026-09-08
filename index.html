@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST2AWD - TP 03 : WebVR avec A-Frame</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --badge-bg: #0369a1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .instructions {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .instructions h2 {
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .instructions ul {
+      list-style: disc inside;
+      color: var(--text-muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--badge-bg);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      flex-grow: 1;
+    }
+
+    .features {
+      list-style: none;
+      margin-bottom: 1.25rem;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .features li {
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .features li::before {
+      content: "✔";
+      color: #34d399;
+      font-size: 0.8rem;
+    }
+
+    .btn {
+      display: block;
+      text-align: center;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 0.7rem 1.2rem;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      color: white;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--card-border);
+      padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>ST2AWD - TP 03 : WebVR avec A-Frame</h1>
+      <p>Portail des exercices pratiques de Réalité Virtuelle dans le Web</p>
+    </header>
+
+    <div class="instructions">
+      <h2>💡 Instructions de navigation et test</h2>
+      <ul>
+        <li><strong>Casque VR (Meta Quest, etc.) :</strong> Ouvrez cette page dans le navigateur Oculus Browser et entrez en mode VR (bouton en bas à droite).</li>
+        <li><strong>Contrôles VR :</strong> Joystick gauche pour se déplacer, joystick droit pour tourner la vue, gâchette/grip pour attraper et tirer.</li>
+        <li><strong>Ordinateur de bureau (Desktop) :</strong> Touches ZQSD / Flèches pour se déplacer, souris pour regarder, clic pour attraper/tirer, Espace pour tirer.</li>
+      </ul>
+    </div>
+
+    <div class="grid">
+      <!-- Exercice 1 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Exercice 1</span>
+          </div>
+          <h3>SceneVR</h3>
+          <p>Scène 3D de base avec objets géométriques, éclairage complet et navigation immersive par joysticks.</p>
+          <ul class="features">
+            <li>Objets 3D simples (cube, sphère, cylindre, sol)</li>
+            <li>Lumière directionnelle avec ombres réalistes</li>
+            <li>Lumière ambient naturelle</li>
+            <li>Ombres projetées et reçues activées</li>
+            <li>Rig joueur : joysticks gauche (déplacement) et droit (rotation)</li>
+          </ul>
+        </div>
+        <a href="exercice1.html" class="btn">Lancer l'Exercice 1 →</a>
+      </div>
+
+      <!-- Exercice 2 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Exercice 2</span>
+          </div>
+          <h3>Interaction & Grabbing</h3>
+          <p>Système de prise en main et relâchement d'objets 3D soumis aux forces physiques et à la gravité.</p>
+          <ul class="features">
+            <li>Objets physiques saisissables (cubes, sphère, cylindre)</li>
+            <li>Suivi exact des mouvements du contrôleur VR</li>
+            <li>Relâchement avec conservation de l'élan (lancer)</li>
+            <li>Chute naturelle sous gravité (-9.8 m/s²) et rebonds</li>
+            <li>Contrôles compatibles VR et Desktop</li>
+          </ul>
+        </div>
+        <a href="exercice2.html" class="btn">Lancer l'Exercice 2 →</a>
+      </div>
+
+      <!-- Exercice 3 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Exercice 3</span>
+          </div>
+          <h3>Arme à feu en VR</h3>
+          <p>Modèle 3D d'arme manipulable avec mécanisme de tir de projectiles physiques et balistique réglable.</p>
+          <ul class="features">
+            <li>Modèle 3D d'arme avec poignée, culasse et mires lumineuses</li>
+            <li>Prise en main ergonomique orientée vers l'avant</li>
+            <li>Tir déclenché par la gâchette VR / Espace / Clic</li>
+            <li>Vitesse initiale, force physique et gravité de la balle</li>
+            <li>Curseurs interactifs pour ajuster vitesse et gravité</li>
+          </ul>
+        </div>
+        <a href="exercice3.html" class="btn">Lancer l'Exercice 3 →</a>
+      </div>
+
+      <!-- Exercice 4 -->
+      <div class="card">
+        <div>
+          <div class="card-header">
+            <span class="badge">Exercice 4</span>
+          </div>
+          <h3>Cibles & Particules</h3>
+          <p>Stand de tir complet avec cibles aléatoires, détection des impacts, éclats de particules et audio spatialisé.</p>
+          <ul class="features">
+            <li>Cibles 3D variées (cubes, cônes, cylindres)</li>
+            <li>Générateur aléatoire (spawner) avec intervalle réglable</li>
+            <li>Détection physique d'impacts par balles</li>
+            <li>Effets de particules d'explosion géométriques</li>
+            <li>Son spatialisé Web Audio (atténuation avec la distance)</li>
+            <li>Tableau des scores 3D et interface HUD</li>
+          </ul>
+        </div>
+        <a href="exercice4.html" class="btn">Lancer l'Exercice 4 →</a>
+      </div>
+    </div>
+
+    <footer>
+      ST2AWD - Master 1 - Développement d'Interfaces - TP 03 WebVR avec A-Frame
+    </footer>
+  </div>
+
+</body>
+</html>

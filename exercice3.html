@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercice 3 : Utilisation d'une arme en VR - TP 03 WebVR</title>
+  <!-- A-Frame 1.5.0 -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <!-- Contrôles Joysticks VR -->
+  <script src="js/vr-controls.js"></script>
+  <!-- Système de Saisie (Grabbing) -->
+  <script src="js/grabbable.js"></script>
+  <!-- Audio & Sons -->
+  <script src="js/targets-audio.js"></script>
+  <!-- Modèle d'Arme et Balistique Physique -->
+  <script src="js/weapon.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .hud {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      color: #f8fafc;
+      padding: 12px 18px;
+      border-radius: 8px;
+      z-index: 1000;
+      max-width: 420px;
+      backdrop-filter: blur(4px);
+    }
+    .hud h1 {
+      margin: 0 0 6px 0;
+      font-size: 1.1rem;
+      color: #38bdf8;
+    }
+    .hud p {
+      margin: 4px 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: #cbd5e1;
+    }
+    .controls-panel {
+      margin-top: 10px;
+      padding: 8px;
+      background: rgba(30, 41, 59, 0.7);
+      border-radius: 6px;
+      font-size: 0.8rem;
+    }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 0;
+    }
+    .control-row label {
+      color: #94a3b8;
+    }
+    .control-row input[type="range"] {
+      width: 130px;
+    }
+    .control-val {
+      font-family: monospace;
+      color: #38bdf8;
+      width: 45px;
+      text-align: right;
+    }
+    .nav-btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #0284c7;
+      color: white;
+      text-decoration: none;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .nav-btn:hover {
+      background: #0369a1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay de contrôle balistique et navigation -->
+  <div class="hud">
+    <h1>Exercice 3 : Arme à feu en VR</h1>
+    <p><strong>En VR :</strong> Attrapez l'arme avec le contrôleur (grip). Pressez la gâchette (index) pour tirer.</p>
+    <p><strong>Sur Desktop :</strong> Cliquez pour équiper l'arme / tirer, ou pressez la touche [Espace].</p>
+
+    <!-- Panneau de réglage en direct des paramètres physiques demandés -->
+    <div class="controls-panel">
+      <div class="control-row">
+        <label for="speed-range">Vitesse initiale :</label>
+        <input type="range" id="speed-range" min="10" max="80" step="5" value="40" oninput="updateGunParams()">
+        <span class="control-val" id="speed-val">40 m/s</span>
+      </div>
+      <div class="control-row">
+        <label for="grav-range">Gravité projectile :</label>
+        <input type="range" id="grav-range" min="-15" max="0" step="0.5" value="-4.5" oninput="updateGunParams()">
+        <span class="control-val" id="grav-val">-4.5 m/s²</span>
+      </div>
+    </div>
+
+    <a href="index.html" class="nav-btn">← Sommaire</a>
+  </div>
+
+  <script>
+    function updateGunParams() {
+      const speed = parseFloat(document.getElementById('speed-range').value);
+      const grav = parseFloat(document.getElementById('grav-range').value);
+      document.getElementById('speed-val').innerText = speed + ' m/s';
+      document.getElementById('grav-val').innerText = grav + ' m/s²';
+
+      const gunEl = document.querySelector('#player-gun');
+      if (gunEl) {
+        gunEl.setAttribute('vr-gun', {
+          bulletSpeed: speed,
+          bulletGravity: grav
+        });
+      }
+    }
+  </script>
+
+  <a-scene
+    shadow="type: pcfsoft"
+    background="color: #090d16"
+    desktop-grab-controls="camera: #camera">
+
+    <!-- Sol du stand de tir -->
+    <a-plane
+      position="0 0 -10"
+      rotation="-90 0 0"
+      width="20"
+      height="35"
+      color="#1e293b"
+      material="roughness: 0.8; metalness: 0.2"
+      shadow="receive: true">
+    </a-plane>
+
+    <!-- Lignes de distance au sol (5m, 10m, 15m, 20m) -->
+    <a-box position="0 0.01 -5" width="8" height="0.01" depth="0.08" color="#38bdf8"></a-box>
+    <a-text value="5m" position="4.2 0.3 -5" rotation="-90 0 0" color="#38bdf8" scale="2 2 2"></a-text>
+
+    <a-box position="0 0.01 -10" width="8" height="0.01" depth="0.08" color="#38bdf8"></a-box>
+    <a-text value="10m" position="4.2 0.3 -10" rotation="-90 0 0" color="#38bdf8" scale="2 2 2"></a-text>
+
+    <a-box position="0 0.01 -15" width="8" height="0.01" depth="0.08" color="#38bdf8"></a-box>
+    <a-text value="15m" position="4.2 0.3 -15" rotation="-90 0 0" color="#38bdf8" scale="2 2 2"></a-text>
+
+    <a-box position="0 0.01 -20" width="8" height="0.01" depth="0.08" color="#38bdf8"></a-box>
+    <a-text value="20m" position="4.2 0.3 -20" rotation="-90 0 0" color="#38bdf8" scale="2 2 2"></a-text>
+
+    <!-- Mur de fond pare-balles -->
+    <a-box
+      position="0 4 -23"
+      width="18"
+      height="8"
+      depth="0.5"
+      color="#0f172a"
+      material="roughness: 0.9"
+      shadow="receive: true">
+    </a-box>
+
+    <!-- Table de tir -->
+    <a-entity id="shooting-bench" position="0 0 -1.2">
+      <a-box position="0 0.85 0" width="1.6" height="0.08" depth="0.8" color="#334155" shadow="cast: true; receive: true"></a-box>
+      <a-cylinder position="-0.7 0.42 -0.3" radius="0.03" height="0.84" color="#0f172a"></a-cylinder>
+      <a-cylinder position="0.7 0.42 -0.3" radius="0.03" height="0.84" color="#0f172a"></a-cylinder>
+      <a-cylinder position="-0.7 0.42 0.3" radius="0.03" height="0.84" color="#0f172a"></a-cylinder>
+      <a-cylinder position="0.7 0.42 0.3" radius="0.03" height="0.84" color="#0f172a"></a-cylinder>
+    </a-entity>
+
+    <!-- ========================================== -->
+    <!-- ARME 3D AVEC PHYSIQUE ET COMPOSANT DE TIR   -->
+    <!-- ========================================== -->
+    <a-entity
+      id="player-gun"
+      class="grabbable"
+      vr-grabbable="useGravity: true; floorY: 0.9"
+      gun-model
+      vr-gun="bulletSpeed: 40; bulletGravity: -4.5; cooldown: 180"
+      position="0 0.95 -1.2"
+      rotation="0 0 0"
+      shadow="cast: true">
+    </a-entity>
+
+    <!-- Cible statique de test au fond -->
+    <a-entity
+      class="target"
+      target="points: 100"
+      position="0 2 -15"
+      geometry="primitive: cylinder; radius: 0.8; height: 0.1"
+      rotation="90 0 0"
+      material="color: #ef4444; roughness: 0.4"
+      shadow="cast: true; receive: true">
+      <!-- Anneau intérieur -->
+      <a-cylinder radius="0.5" height="0.12" color="#ffffff"></a-cylinder>
+      <!-- Centre de cible (bullseye) -->
+      <a-cylinder radius="0.25" height="0.14" color="#ef4444"></a-cylinder>
+    </a-entity>
+
+    <!-- Lumières et Ombres -->
+    <a-entity
+      light="type: directional;
+             color: #ffffff;
+             intensity: 1.2;
+             castShadow: true;
+             shadowMapHeight: 2048;
+             shadowMapWidth: 2048;
+             shadowCameraNear: 0.5;
+             shadowCameraFar: 30;
+             shadowCameraLeft: -10;
+             shadowCameraRight: 10;
+             shadowCameraTop: 10;
+             shadowCameraBottom: -10;"
+      position="5 9 2">
+    </a-entity>
+
+    <a-entity light="type: ambient; color: #475569; intensity: 0.5;"></a-entity>
+
+    <a-sky color="#0b0f19"></a-sky>
+
+    <!-- RIG VR -->
+    <a-entity id="rig" position="0 0 0.5">
+      <a-camera
+        id="camera"
+        position="0 1.6 0"
+        look-controls="pointerLockEnabled: false"
+        wasd-controls="acceleration: 20">
+      </a-camera>
+
+      <!-- Main gauche -->
+      <a-entity
+        id="left-controller"
+        oculus-touch-controls="hand: left"
+        thumbstick-movement="rig: #rig; camera: #camera; speed: 2.5"
+        vr-grab-controls="hand: left; grabRadius: 0.4">
+        <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+
+      <!-- Main droite -->
+      <a-entity
+        id="right-controller"
+        oculus-touch-controls="hand: right"
+        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap"
+        vr-grab-controls="hand: right; grabRadius: 0.4">
+        <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
+      </a-entity>
+    </a-entity>
+
+  </a-scene>
+
+</body>
+</html>
