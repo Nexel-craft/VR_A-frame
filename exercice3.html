@@ -181,9 +181,9 @@
     <a-entity
       id="player-gun"
       class="grabbable"
-      vr-grabbable="useGravity: true; floorY: 0.9"
+      vr-grabbable="useGravity: true; floorY: 0.9; gripRotation: -60 0 0"
       gun-model
-      vr-gun="bulletSpeed: 40; bulletGravity: -4.5; cooldown: 180"
+      vr-gun="bulletSpeed: 40; bulletGravity: -4.5; cooldown: 180; gripAngle: 60"
       position="0 0.95 -1.2"
       rotation="0 0 0"
       shadow="cast: true">
@@ -239,16 +239,16 @@
         id="left-controller"
         oculus-touch-controls="hand: left"
         thumbstick-movement="rig: #rig; camera: #camera; speed: 2.5"
-        vr-grab-controls="hand: left; grabRadius: 0.4">
+        vr-grab-controls="hand: left; grabRadius: 1.2">
         <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
       </a-entity>
 
-      <!-- Main droite -->
+      <!-- Main droite avec rotation fluide -->
       <a-entity
         id="right-controller"
         oculus-touch-controls="hand: right"
-        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap"
-        vr-grab-controls="hand: right; grabRadius: 0.4">
+        thumbstick-turn="rig: #rig; camera: #camera; mode: smooth; smoothSpeed: 90"
+        vr-grab-controls="hand: right; grabRadius: 1.2">
         <a-sphere radius="0.035" color="#38bdf8" opacity="0.6"></a-sphere>
       </a-entity>
     </a-entity>

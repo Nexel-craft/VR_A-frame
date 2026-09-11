@@ -211,17 +211,17 @@
         id="left-controller"
         oculus-touch-controls="hand: left"
         thumbstick-movement="rig: #rig; camera: #camera; speed: 2.5"
-        vr-grab-controls="hand: left; grabRadius: 0.4">
+        vr-grab-controls="hand: left; grabRadius: 1.2">
         <!-- Sphère visuelle représentant la main -->
         <a-sphere radius="0.04" color="#38bdf8" opacity="0.6"></a-sphere>
       </a-entity>
 
-      <!-- Contrôleur Main Droite avec Grabbing -->
+      <!-- Contrôleur Main Droite avec Grabbing et rotation fluide -->
       <a-entity
         id="right-controller"
         oculus-touch-controls="hand: right"
-        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap"
-        vr-grab-controls="hand: right; grabRadius: 0.4">
+        thumbstick-turn="rig: #rig; camera: #camera; mode: smooth; smoothSpeed: 90"
+        vr-grab-controls="hand: right; grabRadius: 1.2">
         <!-- Sphère visuelle représentant la main -->
         <a-sphere radius="0.04" color="#38bdf8" opacity="0.6"></a-sphere>
       </a-entity>

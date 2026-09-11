@@ -117,7 +117,8 @@ AFRAME.registerComponent('vr-gun', {
     bulletSpeed: { type: 'number', default: 35.0 },     // Vitesse initiale du projectile (m/s)
     bulletGravity: { type: 'number', default: -4.5 },   // Gravité du projectile (m/s²)
     recoilAmount: { type: 'number', default: 0.02 },    // Recul visuel
-    cooldown: { type: 'number', default: 180 }          // Délai min entre deux tirs (ms)
+    cooldown: { type: 'number', default: 180 },         // Délai min entre deux tirs (ms)
+    gripAngle: { type: 'number', default: 60 }          // Angle d'inclinaison ergonomique pour manette VR (degrés)
   },
 
   init: function () {
@@ -125,6 +126,18 @@ AFRAME.registerComponent('vr-gun', {
     this.isEquipped = false;
     this.shoot = this.shoot.bind(this);
     this.onActionDown = this.onActionDown.bind(this);
+
+    // Configurer automatiquement l'angle ergonomique de 60° sur vr-grabbable pour viser naturellement en VR
+    const grabbable = this.el.components['vr-grabbable'];
+    if (grabbable) {
+      const rot = grabbable.data.gripRotation;
+      if (!rot || (rot.x === 0 && rot.y === 0 && rot.z === 0)) {
+        grabbable.data.gripRotation = { x: -this.data.gripAngle, y: 0, z: 0 };
+        if (grabbable.updateGripTransform) {
+          grabbable.updateGripTransform();
+        }
+      }
+    }
 
     this.el.addEventListener('actiondown', this.onActionDown);
     this.el.addEventListener('triggerdown', this.shoot);
@@ -197,12 +210,13 @@ AFRAME.registerComponent('vr-gun', {
   },
 
   applyRecoil: function () {
-    const obj = this.el.object3D;
-    const startRotX = obj.rotation.x;
-    obj.rotation.x += THREE.MathUtils.degToRad(8);
+    const mesh = this.el.getObject3D('mesh');
+    if (!mesh) return;
+    const startRotX = mesh.rotation.x;
+    mesh.rotation.x += THREE.MathUtils.degToRad(7);
     setTimeout(() => {
-      obj.rotation.x = startRotX;
-    }, 60);
+      if (mesh) mesh.rotation.x = startRotX;
+    }, 70);
   }
 });
 

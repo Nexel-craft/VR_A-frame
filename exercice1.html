@@ -58,7 +58,7 @@
   <!-- Overlay d'informations et navigation -->
   <div class="hud">
     <h1>Exercice 1 : SceneVR</h1>
-    <p><strong>VR :</strong> Joystick gauche = déplacement | Joystick droit = rotation</p>
+    <p><strong>VR :</strong> Joystick gauche = déplacement fluide | Joystick droit = rotation fluide</p>
     <p><strong>Desktop :</strong> Touches ZQSD / Flèches = déplacement | Clic-glisser = regarder</p>
     <p><strong>Éléments :</strong> Cube, sphère, cylindre, sol texturé, ombres réalistes et lumière ambiante.</p>
     <a href="index.html" class="nav-btn">← Retour au sommaire</a>
@@ -158,11 +158,11 @@
         thumbstick-movement="rig: #rig; camera: #camera; speed: 3.0">
       </a-entity>
 
-      <!-- Contrôleur Main Droite : Rotation de la vue au joystick (snap turn 45°) -->
+      <!-- Contrôleur Main Droite : Rotation fluide de la vue au joystick -->
       <a-entity
         id="right-controller"
         oculus-touch-controls="hand: right"
-        thumbstick-turn="rig: #rig; turnAngle: 45; mode: snap">
+        thumbstick-turn="rig: #rig; camera: #camera; mode: smooth; smoothSpeed: 90">
       </a-entity>
     </a-entity>
 
