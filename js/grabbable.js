@@ -16,8 +16,8 @@ AFRAME.registerComponent('vr-grabbable', {
     floorY: { type: 'number', default: 0.15 },
     tableY: { type: 'number', default: 0.89 },
     halfHeight: { type: 'number', default: 0.15 },
-    gripRotation: { type: 'vec3', default: { x: 0, y: 0, z: 0 } }, // Décalage angulaire en main (ex: -60° pour le tir pistolet)
-    gripPosition: { type: 'vec3', default: { x: 0, y: 0, z: 0 } }   // Décalage de position en main
+    gripRotation: { type: 'vec3', default: { x: -60, y: 0, z: 0 } }, // Décalage angulaire ergonomique en main (-60° par défaut, identique au pistolet)
+    gripPosition: { type: 'vec3', default: { x: 0, y: 0, z: 0 } }    // Décalage de position en main
   },
 
   init: function () {
@@ -29,6 +29,13 @@ AFRAME.registerComponent('vr-grabbable', {
     this.velocity = new THREE.Vector3(0, 0, 0);
     this.prevPosition = new THREE.Vector3();
     this.el.object3D.getWorldPosition(this.prevPosition);
+
+    // Vecteurs et quaternions réutilisables (0 allocation GC dans tick)
+    this.targetPos = new THREE.Vector3();
+    this.targetQuat = new THREE.Quaternion();
+    this.currentPos = new THREE.Vector3();
+    this.tempQuat = new THREE.Quaternion();
+    this.tempOffset = new THREE.Vector3();
 
     this.updateGripTransform();
   },
@@ -100,45 +107,42 @@ AFRAME.registerComponent('vr-grabbable', {
 
     if (this.isGrabbed && this.grabber) {
       const grabberObj = this.grabber.object3D;
-      const targetPos = new THREE.Vector3();
-      const targetQuat = new THREE.Quaternion();
 
-      grabberObj.getWorldPosition(targetPos);
-      grabberObj.getWorldQuaternion(targetQuat);
+      grabberObj.getWorldPosition(this.targetPos);
+      grabberObj.getWorldQuaternion(this.targetQuat);
 
       const isDesktopHand = (this.grabber.id === 'desktop-virtual-hand');
 
-      // En VR, appliquer l'orientation de prise en main ergonomique (ex: -60° pour le pistolet)
+      // En VR, appliquer l'orientation de prise en main ergonomique (-60° par défaut comme le pistolet)
       if (!isDesktopHand && this.gripQuat) {
-        targetQuat.multiply(this.gripQuat);
+        this.targetQuat.multiply(this.gripQuat);
       }
 
       // En VR, appliquer le décalage de position si spécifié
       if (!isDesktopHand && this.data.gripPosition && (this.data.gripPosition.x || this.data.gripPosition.y || this.data.gripPosition.z)) {
-        const offsetWorld = new THREE.Vector3(
+        this.tempOffset.set(
           this.data.gripPosition.x,
           this.data.gripPosition.y,
           this.data.gripPosition.z
-        ).applyQuaternion(grabberObj.getWorldQuaternion(new THREE.Quaternion()));
-        targetPos.add(offsetWorld);
+        ).applyQuaternion(grabberObj.getWorldQuaternion(this.tempQuat));
+        this.targetPos.add(this.tempOffset);
       }
 
-      const currentPos = new THREE.Vector3();
-      this.el.object3D.getWorldPosition(currentPos);
-      this.velocity.subVectors(targetPos, currentPos).divideScalar(dt);
+      this.el.object3D.getWorldPosition(this.currentPos);
+      this.velocity.subVectors(this.targetPos, this.currentPos).divideScalar(dt);
 
       // Si l'objet est en cours d'attraction vers la main (laser grab)
       if (this.isAttracting) {
-        this.el.object3D.position.lerp(targetPos, Math.min(1.0, 20.0 * dt));
-        this.el.object3D.quaternion.slerp(targetQuat, Math.min(1.0, 20.0 * dt));
-        if (this.el.object3D.position.distanceTo(targetPos) < 0.05) {
+        this.el.object3D.position.lerp(this.targetPos, Math.min(1.0, 20.0 * dt));
+        this.el.object3D.quaternion.slerp(this.targetQuat, Math.min(1.0, 20.0 * dt));
+        if (this.el.object3D.position.distanceTo(this.targetPos) < 0.05) {
           this.isAttracting = false;
-          this.el.object3D.position.copy(targetPos);
-          this.el.object3D.quaternion.copy(targetQuat);
+          this.el.object3D.position.copy(this.targetPos);
+          this.el.object3D.quaternion.copy(this.targetQuat);
         }
       } else {
-        this.el.object3D.position.copy(targetPos);
-        this.el.object3D.quaternion.copy(targetQuat);
+        this.el.object3D.position.copy(this.targetPos);
+        this.el.object3D.quaternion.copy(this.targetQuat);
       }
       return;
     }
@@ -190,7 +194,8 @@ AFRAME.registerComponent('vr-grab-controls', {
     hand: { type: 'string', default: 'right' },
     grabRadius: { type: 'number', default: 1.2 }, // Portée directe de proximité (m)
     rayLength: { type: 'number', default: 6.0 },   // Longueur maximale du rayon laser (m)
-    showLaser: { type: 'boolean', default: true }  // Faisceau laser visible
+    showLaser: { type: 'boolean', default: true },  // Faisceau laser visible
+    rayAngle: { type: 'number', default: 60 }      // Inclinaison ergonomique du rayon (60° vers le bas, comme le pistolet)
   },
 
   init: function () {
@@ -204,6 +209,13 @@ AFRAME.registerComponent('vr-grab-controls', {
     this.raycaster = new THREE.Raycaster();
     this.rayOrigin = new THREE.Vector3();
     this.rayDir = new THREE.Vector3();
+    this.controllerQuat = new THREE.Quaternion();
+    this.rayQuat = new THREE.Quaternion();
+    this.laserOffsetQuat = new THREE.Quaternion();
+    this.myPos = new THREE.Vector3();
+    this.targetObjPos = new THREE.Vector3();
+    this.currentPos = new THREE.Vector3();
+    this.instantVel = new THREE.Vector3();
 
     // Initialisation du rayon laser VR
     this.initLaser();
@@ -217,6 +229,20 @@ AFRAME.registerComponent('vr-grab-controls', {
     this.el.addEventListener('gripup', this.onGripUp);
     this.el.addEventListener('triggerdown', this.onTriggerDown);
     this.el.addEventListener('triggerup', this.onTriggerUp);
+  },
+
+  update: function (oldData) {
+    if (this.laserGroup) {
+      this.updateRayAngle();
+    }
+  },
+
+  updateRayAngle: function () {
+    const angleRad = THREE.MathUtils.degToRad(-this.data.rayAngle);
+    this.laserOffsetQuat.setFromAxisAngle(new THREE.Vector3(1, 0, 0), angleRad);
+    if (this.laserGroup) {
+      this.laserGroup.rotation.x = angleRad;
+    }
   },
 
   initLaser: function () {
@@ -247,6 +273,9 @@ AFRAME.registerComponent('vr-grab-controls', {
     this.laserDot = new THREE.Mesh(dotGeo, this.dotMat);
     this.laserDot.position.set(0, 0, -beamLength);
     this.laserGroup.add(this.laserDot);
+
+    // Appliquer l'inclinaison ergonomique au groupe laser
+    this.updateRayAngle();
 
     this.el.object3D.add(this.laserGroup);
   },
@@ -295,10 +324,11 @@ AFRAME.registerComponent('vr-grab-controls', {
 
     this.laserGroup.visible = true;
 
-    // Raycast depuis le contrôleur vers l'avant (-Z)
+    // Raycast depuis le contrôleur vers l'avant (-Z) avec l'inclinaison ergonomique (-60° comme le pistolet)
     this.el.object3D.getWorldPosition(this.rayOrigin);
-    const quat = this.el.object3D.getWorldQuaternion(new THREE.Quaternion());
-    this.rayDir.set(0, 0, -1).applyQuaternion(quat).normalize();
+    this.el.object3D.getWorldQuaternion(this.controllerQuat);
+    this.rayQuat.copy(this.controllerQuat).multiply(this.laserOffsetQuat);
+    this.rayDir.set(0, 0, -1).applyQuaternion(this.rayQuat).normalize();
 
     this.raycaster.set(this.rayOrigin, this.rayDir);
     this.raycaster.far = this.data.rayLength;
@@ -364,8 +394,7 @@ AFRAME.registerComponent('vr-grab-controls', {
 
     // 2. Si aucun objet n'est sous le rayon, détection de proximité directe autour de la main
     if (!targetToGrab) {
-      const myPos = new THREE.Vector3();
-      this.el.object3D.getWorldPosition(myPos);
+      this.el.object3D.getWorldPosition(this.myPos);
 
       const grabbables = document.querySelectorAll('.grabbable');
       let minDist = this.data.grabRadius;
@@ -373,9 +402,8 @@ AFRAME.registerComponent('vr-grab-controls', {
       grabbables.forEach(el => {
         const comp = el.components['vr-grabbable'];
         if (comp && comp.isGrabbed) return;
-        const targetPos = new THREE.Vector3();
-        el.object3D.getWorldPosition(targetPos);
-        const dist = myPos.distanceTo(targetPos);
+        el.object3D.getWorldPosition(this.targetObjPos);
+        const dist = this.myPos.distanceTo(this.targetObjPos);
         if (dist < minDist) {
           minDist = dist;
           targetToGrab = el;
@@ -422,13 +450,12 @@ AFRAME.registerComponent('vr-grab-controls', {
       this.tryGrab();
     }
 
-    const currentPos = new THREE.Vector3();
-    this.el.object3D.getWorldPosition(currentPos);
+    this.el.object3D.getWorldPosition(this.currentPos);
 
-    const instantVel = new THREE.Vector3().subVectors(currentPos, this.lastWorldPos).divideScalar(dt);
-    this.lastWorldPos.copy(currentPos);
+    this.instantVel.subVectors(this.currentPos, this.lastWorldPos).divideScalar(dt);
+    this.lastWorldPos.copy(this.currentPos);
 
-    this.recentVelocities.push(instantVel);
+    this.recentVelocities.push(this.instantVel.clone());
     if (this.recentVelocities.length > 5) {
       this.recentVelocities.shift();
     }

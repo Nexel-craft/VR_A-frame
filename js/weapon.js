@@ -130,12 +130,9 @@ AFRAME.registerComponent('vr-gun', {
     // Configurer automatiquement l'angle ergonomique de 60° sur vr-grabbable pour viser naturellement en VR
     const grabbable = this.el.components['vr-grabbable'];
     if (grabbable) {
-      const rot = grabbable.data.gripRotation;
-      if (!rot || (rot.x === 0 && rot.y === 0 && rot.z === 0)) {
-        grabbable.data.gripRotation = { x: -this.data.gripAngle, y: 0, z: 0 };
-        if (grabbable.updateGripTransform) {
-          grabbable.updateGripTransform();
-        }
+      grabbable.data.gripRotation = { x: -this.data.gripAngle, y: 0, z: 0 };
+      if (grabbable.updateGripTransform) {
+        grabbable.updateGripTransform();
       }
     }
 
