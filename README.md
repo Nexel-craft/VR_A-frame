@@ -4,7 +4,7 @@ Ce projet contient la solution complète et modulaire pour le **TP 03 : WebVR av
 
 ---
 
-## 🚀 Démarrage Rapide
+## Démarrage Rapide
 
 Pour tester l'application dans des conditions optimales (WebVR / WebXR requiert un contexte HTTP sécurisé ou local) :
 
@@ -17,7 +17,7 @@ Pour tester l'application dans des conditions optimales (WebVR / WebXR requiert 
 
 ---
 
-## 📂 Structure du Projet
+## Structure du Projet
 
 ```text
 TP03/
@@ -37,7 +37,7 @@ TP03/
 
 ---
 
-## 🎮 Commandes et Contrôles
+## Commandes et Contrôles
 
 ### En Casque VR (Meta Quest / SteamVR)
 - **Déplacement :** Joystick gauche (avant, arrière, pas latéraux gauche/droite selon le regard).
@@ -53,7 +53,7 @@ TP03/
 
 ---
 
-## 📋 Récapitulatif des Exercices
+## Récapitulatif des Exercices
 
 ### Exercice 1 : SceneVR (`exercice1.html`)
 - Objets 3D simples : cube rouge, sphère cyan, cylindre vert, sol texturé.

@@ -18,43 +18,37 @@
     body {
       margin: 0;
       overflow: hidden;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: sans-serif;
     }
     .hud {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #f8fafc;
-      padding: 12px 18px;
-      border-radius: 8px;
+      top: 10px;
+      left: 10px;
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #000000;
+      padding: 10px 14px;
       z-index: 1000;
-      max-width: 420px;
-      backdrop-filter: blur(4px);
+      max-width: 440px;
     }
     .hud h1 {
-      margin: 0 0 6px 0;
+      margin: 0 0 5px 0;
       font-size: 1.1rem;
-      color: #38bdf8;
     }
     .hud p {
       margin: 4px 0;
       font-size: 0.85rem;
-      line-height: 1.35;
-      color: #cbd5e1;
     }
     .score-badge {
       font-size: 1rem;
-      font-weight: 700;
-      color: #4ade80;
+      font-weight: bold;
       margin: 6px 0;
     }
     .controls-panel {
-      margin-top: 8px;
-      padding: 8px;
-      background: rgba(30, 41, 59, 0.7);
-      border-radius: 6px;
-      font-size: 0.8rem;
+      margin: 8px 0;
+      padding: 6px;
+      border: 1px solid #dddddd;
+      font-size: 0.85rem;
     }
     .control-row {
       display: flex;
@@ -62,31 +56,19 @@
       align-items: center;
       margin: 4px 0;
     }
-    .control-row label {
-      color: #94a3b8;
-    }
     .control-row input[type="range"] {
-      width: 120px;
+      width: 130px;
     }
     .control-val {
       font-family: monospace;
-      color: #38bdf8;
-      width: 45px;
+      width: 50px;
       text-align: right;
     }
-    .nav-btn {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 6px 12px;
-      background: #0284c7;
-      color: white;
-      text-decoration: none;
+    .hud nav {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid #cccccc;
       font-size: 0.85rem;
-      border-radius: 4px;
-      font-weight: 500;
-    }
-    .nav-btn:hover {
-      background: #0369a1;
     }
   </style>
 </head>
@@ -94,11 +76,11 @@
 
   <!-- Overlay d'affichage du score, réglage audio et navigation -->
   <div class="hud">
-    <h1>Exercice 4 : Cibles & Particules</h1>
+    <h1>Exercice 4 : Cibles et Particules</h1>
     <div class="score-badge" id="hud-score">Score: 0 | Cibles: 0</div>
-    <p><strong>VR :</strong> Prenez l'arme et tirez sur les cibles volantes (cubes, cônes, cylindres).</p>
-    <p><strong>Desktop :</strong> Cliquez ou appuyez sur [Espace] pour tirer.</p>
-    <p><strong>Effets :</strong> Particules d'éclats à l'impact et son spatialisé avec atténuation de distance.</p>
+    <p><strong>VR :</strong> Prenez l'arme et tirez sur les cibles volantes (cubes, cones, cylindres).</p>
+    <p><strong>Desktop :</strong> Cliquez ou appuyez sur Espace pour tirer.</p>
+    <p><strong>Effets :</strong> Particules d'eclats a l'impact et son spatialise avec attenuation de distance.</p>
 
     <!-- Réglage du volume et de l'atténuation audio demandé dans le TP -->
     <div class="controls-panel">
@@ -114,7 +96,14 @@
       </div>
     </div>
 
-    <a href="index.html" class="nav-btn">← Sommaire</a>
+    <nav>
+      <strong>Menu :</strong>
+      <a href="index.html">Accueil</a> |
+      <a href="exercice1.html">Ex 1</a> |
+      <a href="exercice2.html">Ex 2</a> |
+      <a href="exercice3.html">Ex 3</a> |
+      <a href="exercice4.html">Ex 4</a>
+    </nav>
   </div>
 
   <script>

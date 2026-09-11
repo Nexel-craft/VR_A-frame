@@ -12,44 +12,32 @@
     body {
       margin: 0;
       overflow: hidden;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: sans-serif;
     }
     .hud {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(15, 23, 42, 0.85);
-      color: #f8fafc;
-      padding: 12px 18px;
-      border-radius: 8px;
+      top: 10px;
+      left: 10px;
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #000000;
+      padding: 10px 14px;
       z-index: 1000;
-      max-width: 380px;
-      backdrop-filter: blur(4px);
+      max-width: 420px;
     }
     .hud h1 {
-      margin: 0 0 6px 0;
+      margin: 0 0 5px 0;
       font-size: 1.1rem;
-      color: #38bdf8;
     }
     .hud p {
       margin: 4px 0;
       font-size: 0.85rem;
-      line-height: 1.35;
-      color: #cbd5e1;
     }
-    .nav-btn {
-      display: inline-block;
+    .hud nav {
       margin-top: 8px;
-      padding: 6px 12px;
-      background: #0284c7;
-      color: white;
-      text-decoration: none;
+      padding-top: 6px;
+      border-top: 1px solid #cccccc;
       font-size: 0.85rem;
-      border-radius: 4px;
-      font-weight: 500;
-    }
-    .nav-btn:hover {
-      background: #0369a1;
     }
   </style>
 </head>
@@ -58,10 +46,17 @@
   <!-- Overlay d'informations et navigation -->
   <div class="hud">
     <h1>Exercice 1 : SceneVR</h1>
-    <p><strong>VR :</strong> Joystick gauche = déplacement fluide | Joystick droit = rotation fluide</p>
-    <p><strong>Desktop :</strong> Touches ZQSD / Flèches = déplacement | Clic-glisser = regarder</p>
-    <p><strong>Éléments :</strong> Cube, sphère, cylindre, sol texturé, ombres réalistes et lumière ambiante.</p>
-    <a href="index.html" class="nav-btn">← Retour au sommaire</a>
+    <p><strong>VR :</strong> Joystick gauche = deplacement fluide | Joystick droit = rotation fluide</p>
+    <p><strong>Desktop :</strong> Touches ZQSD / Fleches = deplacement | Clic-glisser = regarder</p>
+    <p><strong>Elements :</strong> Cube, sphere, cylindre, sol texturé, ombres réalistes et lumière ambiante.</p>
+    <nav>
+      <strong>Menu :</strong>
+      <a href="index.html">Accueil</a> |
+      <a href="exercice1.html">Ex 1</a> |
+      <a href="exercice2.html">Ex 2</a> |
+      <a href="exercice3.html">Ex 3</a> |
+      <a href="exercice4.html">Ex 4</a>
+    </nav>
   </div>
 
   <a-scene
