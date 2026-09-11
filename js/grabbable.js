@@ -57,6 +57,7 @@ AFRAME.registerComponent('vr-grabbable', {
     this.isGrabbed = true;
     this.isResting = false;
     this.grabber = grabberEl;
+    this.isAttracting = true;
     this.velocity.set(0, 0, 0);
 
     // Effet visuel lors de la prise en main (légère surbrillance)
@@ -126,8 +127,19 @@ AFRAME.registerComponent('vr-grabbable', {
       this.el.object3D.getWorldPosition(currentPos);
       this.velocity.subVectors(targetPos, currentPos).divideScalar(dt);
 
-      this.el.object3D.position.copy(targetPos);
-      this.el.object3D.quaternion.copy(targetQuat);
+      // Si l'objet est en cours d'attraction vers la main (laser grab)
+      if (this.isAttracting) {
+        this.el.object3D.position.lerp(targetPos, Math.min(1.0, 20.0 * dt));
+        this.el.object3D.quaternion.slerp(targetQuat, Math.min(1.0, 20.0 * dt));
+        if (this.el.object3D.position.distanceTo(targetPos) < 0.05) {
+          this.isAttracting = false;
+          this.el.object3D.position.copy(targetPos);
+          this.el.object3D.quaternion.copy(targetQuat);
+        }
+      } else {
+        this.el.object3D.position.copy(targetPos);
+        this.el.object3D.quaternion.copy(targetQuat);
+      }
       return;
     }
 
@@ -176,15 +188,25 @@ AFRAME.registerComponent('vr-grabbable', {
 AFRAME.registerComponent('vr-grab-controls', {
   schema: {
     hand: { type: 'string', default: 'right' },
-    grabRadius: { type: 'number', default: 1.2 } // Portée élargie pour attraper facilement de loin
+    grabRadius: { type: 'number', default: 1.2 }, // Portée directe de proximité (m)
+    rayLength: { type: 'number', default: 6.0 },   // Longueur maximale du rayon laser (m)
+    showLaser: { type: 'boolean', default: true }  // Faisceau laser visible
   },
 
   init: function () {
     this.grabbedEl = null;
+    this.targetedEl = null;
     this.isGripHeld = false;
     this.recentVelocities = [];
     this.lastWorldPos = new THREE.Vector3();
     this.el.object3D.getWorldPosition(this.lastWorldPos);
+
+    this.raycaster = new THREE.Raycaster();
+    this.rayOrigin = new THREE.Vector3();
+    this.rayDir = new THREE.Vector3();
+
+    // Initialisation du rayon laser VR
+    this.initLaser();
 
     this.onGripDown = this.onGripDown.bind(this);
     this.onGripUp = this.onGripUp.bind(this);
@@ -197,11 +219,46 @@ AFRAME.registerComponent('vr-grab-controls', {
     this.el.addEventListener('triggerup', this.onTriggerUp);
   },
 
+  initLaser: function () {
+    this.laserGroup = new THREE.Group();
+    this.laserGroup.name = 'vr-grab-laser';
+
+    // 1. Faisceau laser (cylindre fin orienté vers -Z)
+    const beamLength = this.data.rayLength;
+    const beamGeo = new THREE.CylinderGeometry(0.002, 0.0035, beamLength, 8);
+    beamGeo.rotateX(Math.PI / 2);
+    beamGeo.translate(0, 0, -beamLength / 2);
+
+    this.laserMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.55
+    });
+    this.laserBeam = new THREE.Mesh(beamGeo, this.laserMat);
+    this.laserGroup.add(this.laserBeam);
+
+    // 2. Réticule / curseur lumineux au point d'impact
+    const dotGeo = new THREE.SphereGeometry(0.016, 12, 12);
+    this.dotMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85
+    });
+    this.laserDot = new THREE.Mesh(dotGeo, this.dotMat);
+    this.laserDot.position.set(0, 0, -beamLength);
+    this.laserGroup.add(this.laserDot);
+
+    this.el.object3D.add(this.laserGroup);
+  },
+
   remove: function () {
     this.el.removeEventListener('gripdown', this.onGripDown);
     this.el.removeEventListener('gripup', this.onGripUp);
     this.el.removeEventListener('triggerdown', this.onTriggerDown);
     this.el.removeEventListener('triggerup', this.onTriggerUp);
+    if (this.laserGroup && this.laserGroup.parent) {
+      this.laserGroup.parent.remove(this.laserGroup);
+    }
   },
 
   onGripDown: function () {
@@ -218,6 +275,7 @@ AFRAME.registerComponent('vr-grab-controls', {
     if (this.grabbedEl) {
       this.grabbedEl.emit('actiondown', { hand: this.data.hand, controller: this.el });
     } else {
+      // Main vide : la gâchette permet aussi d'attraper l'objet visé au laser
       this.tryGrab();
     }
   },
@@ -228,47 +286,108 @@ AFRAME.registerComponent('vr-grab-controls', {
     }
   },
 
-  tryGrab: function () {
-    if (this.grabbedEl) return;
+  updateLaser: function () {
+    if (this.grabbedEl || !this.data.showLaser) {
+      this.laserGroup.visible = false;
+      this.targetedEl = null;
+      return;
+    }
 
-    const myPos = new THREE.Vector3();
-    const myQuat = new THREE.Quaternion();
-    this.el.object3D.getWorldPosition(myPos);
-    this.el.object3D.getWorldQuaternion(myQuat);
+    this.laserGroup.visible = true;
 
-    // Direction vers laquelle pointe la main / contrôleur
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(myQuat);
+    // Raycast depuis le contrôleur vers l'avant (-Z)
+    this.el.object3D.getWorldPosition(this.rayOrigin);
+    const quat = this.el.object3D.getWorldQuaternion(new THREE.Quaternion());
+    this.rayDir.set(0, 0, -1).applyQuaternion(quat).normalize();
 
-    const grabbables = document.querySelectorAll('.grabbable');
-    let closestEl = null;
-    let bestScore = Infinity;
-    const maxDistance = this.data.grabRadius;
+    this.raycaster.set(this.rayOrigin, this.rayDir);
+    this.raycaster.far = this.data.rayLength;
 
-    grabbables.forEach(el => {
+    // Récupérer les meshes des objets saisissables disponibles
+    const grabbableMeshes = [];
+    document.querySelectorAll('.grabbable').forEach(el => {
       const comp = el.components['vr-grabbable'];
       if (comp && comp.isGrabbed) return;
-      const targetPos = new THREE.Vector3();
-      el.object3D.getWorldPosition(targetPos);
-      
-      const toTarget = new THREE.Vector3().subVectors(targetPos, myPos);
-      const dist = toTarget.length();
-
-      // Prise en compte de la portée de grab
-      if (dist <= maxDistance) {
-        toTarget.normalize();
-        // Bonus si le contrôleur est orienté vers l'objet (priorité au regard de la main)
-        const alignment = Math.max(0, forward.dot(toTarget));
-        const score = dist - (alignment * 0.4);
-        if (score < bestScore) {
-          bestScore = score;
-          closestEl = el;
-        }
+      const mesh = el.getObject3D('mesh');
+      if (mesh) {
+        mesh.userData.aframeEl = el;
+        grabbableMeshes.push(mesh);
       }
     });
 
-    if (closestEl && closestEl.components['vr-grabbable']) {
-      this.grabbedEl = closestEl;
-      closestEl.components['vr-grabbable'].onGrab(this.el);
+    const hits = this.raycaster.intersectObjects(grabbableMeshes, true);
+
+    if (hits.length > 0) {
+      let hitEl = hits[0].object.userData.aframeEl;
+      let curr = hits[0].object;
+      while (!hitEl && curr.parent) {
+        curr = curr.parent;
+        if (curr.userData && curr.userData.aframeEl) {
+          hitEl = curr.userData.aframeEl;
+        }
+      }
+
+      this.targetedEl = hitEl;
+      const hitDist = hits[0].distance;
+
+      // Adapter la longueur du faisceau à l'impact exact
+      this.laserBeam.scale.set(1, 1, Math.max(0.05, hitDist / this.data.rayLength));
+      this.laserDot.position.set(0, 0, -hitDist);
+
+      // Passer en couleur verte / émeraude vif (objet verrouillé)
+      this.laserMat.color.setHex(0x34d399);
+      this.laserMat.opacity = 0.9;
+      this.dotMat.color.setHex(0x34d399);
+      this.laserDot.scale.set(1.4, 1.4, 1.4);
+    } else {
+      this.targetedEl = null;
+      this.laserBeam.scale.set(1, 1, 1);
+      this.laserDot.position.set(0, 0, -this.data.rayLength);
+
+      // Couleur cyan repos
+      this.laserMat.color.setHex(0x38bdf8);
+      this.laserMat.opacity = 0.5;
+      this.dotMat.color.setHex(0x38bdf8);
+      this.laserDot.scale.set(1.0, 1.0, 1.0);
+    }
+  },
+
+  tryGrab: function () {
+    if (this.grabbedEl) return;
+
+    let targetToGrab = null;
+
+    // 1. Priorité à l'objet visé directement par le rayon laser
+    if (this.targetedEl && this.targetedEl.components['vr-grabbable'] && !this.targetedEl.components['vr-grabbable'].isGrabbed) {
+      targetToGrab = this.targetedEl;
+    }
+
+    // 2. Si aucun objet n'est sous le rayon, détection de proximité directe autour de la main
+    if (!targetToGrab) {
+      const myPos = new THREE.Vector3();
+      this.el.object3D.getWorldPosition(myPos);
+
+      const grabbables = document.querySelectorAll('.grabbable');
+      let minDist = this.data.grabRadius;
+
+      grabbables.forEach(el => {
+        const comp = el.components['vr-grabbable'];
+        if (comp && comp.isGrabbed) return;
+        const targetPos = new THREE.Vector3();
+        el.object3D.getWorldPosition(targetPos);
+        const dist = myPos.distanceTo(targetPos);
+        if (dist < minDist) {
+          minDist = dist;
+          targetToGrab = el;
+        }
+      });
+    }
+
+    if (targetToGrab && targetToGrab.components['vr-grabbable']) {
+      this.grabbedEl = targetToGrab;
+      this.targetedEl = null;
+      this.laserGroup.visible = false;
+      targetToGrab.components['vr-grabbable'].onGrab(this.el);
     }
   },
 
@@ -288,13 +407,17 @@ AFRAME.registerComponent('vr-grab-controls', {
       this.grabbedEl.components['vr-grabbable'].onRelease(avgVelocity);
     }
     this.grabbedEl = null;
+    this.laserGroup.visible = true;
   },
 
   tick: function (time, timeDelta) {
     const dt = timeDelta / 1000;
     if (dt <= 0) return;
 
-    // Si l'utilisateur maintient le grip en approchant sa main, attraper dès que l'objet entre à portée
+    // Mettre à jour le rayon laser interactif
+    this.updateLaser();
+
+    // Saisie continue si le grip est maintenu
     if (this.isGripHeld && !this.grabbedEl) {
       this.tryGrab();
     }

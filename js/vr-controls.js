@@ -105,8 +105,9 @@ AFRAME.registerComponent('thumbstick-movement', {
     // Récupérer le vecteur de direction réel du regard dans le monde 3D
     cameraEl.object3D.getWorldDirection(this.worldDir);
 
-    // Projection sur le plan de marche horizontal (XZ)
-    this.forward.set(this.worldDir.x, 0, this.worldDir.z);
+    // Three.js Object3D.getWorldDirection pointe vers le +Z mondial.
+    // La caméra Three.js regarde vers le -Z, on inverse donc le vecteur pour obtenir l'avant réel.
+    this.forward.set(-this.worldDir.x, 0, -this.worldDir.z);
     if (this.forward.lengthSq() > 0.0001) {
       this.forward.normalize();
     } else {
@@ -114,9 +115,10 @@ AFRAME.registerComponent('thumbstick-movement', {
     }
 
     // Vecteur latéral droit orthogonal (Right = Forward x Up)
+    // Forward = (fx, 0, fz), Up = (0, 1, 0) => Right = (-fz, 0, fx)
     this.right.set(-this.forward.z, 0, this.forward.x);
 
-    // Joystick Y négatif = avant (-y), X positif = strafe droite (+x)
+    // Joystick Y négatif = avant (-input.y > 0), X positif = strafe droite (+input.x > 0)
     const targetX = (this.forward.x * (-input.y) + this.right.x * input.x) * this.data.speed;
     const targetZ = (this.forward.z * (-input.y) + this.right.z * input.x) * this.data.speed;
     this.targetVelocity.set(targetX, 0, targetZ);

@@ -42,8 +42,8 @@ TP03/
 ### En Casque VR (Meta Quest / SteamVR)
 - **Déplacement :** Joystick gauche (avant, arrière, pas latéraux gauche/droite selon le regard).
 - **Rotation de vue :** Joystick droit (rotation fluide *smooth turn* par défaut à 90°/s centrée sur la tête du joueur, ou *snap turn* par paliers).
-- **Saisie d'objets / Grabbing :** Bouton Grip ou Gâchette en approchant la main de l'objet.
-- **Tir de l'arme :** Gâchette (index) lorsque l'arme est en main.
+- **Saisie d'objets / Grabbing :** Rayon laser VR interactif (pointer l'objet et presser Grip ou Gâchette pour l'attirer en main) ou saisie directe au contact.
+- **Tir de l'arme :** Gâchette (index) lorsque l'arme est en main (angle ergonomique à 60° pour un tir naturel).
 
 ### Sur Ordinateur de Bureau (Desktop - Mode simulation)
 - **Déplacement :** Touches `Z`, `Q`, `S`, `D` ou les touches fléchées.
